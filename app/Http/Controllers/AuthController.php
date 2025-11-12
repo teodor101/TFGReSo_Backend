@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Post;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -80,18 +81,34 @@ class AuthController extends Controller
     }
 
 
-    public function profile(Request $request) {
+    public function profile(Request $request)
+    {
         try {
-        
+
             $user = User::findOrFail($request->user()->id);
 
             return response([
                 'user' => $user,
             ], 200);
-
         } catch (\Throwable $th) {
             return response([
                 "eeeerrr"
+            ], 500);
+        }
+    }
+
+    public function getCurrentUserWithPosts(Request $request)
+    {
+        try {
+
+            $userWithPosts = User::findOrFail($request->user()->id)->posts;
+
+            return response([
+                'user' => $userWithPosts,
+            ], 200);
+        } catch (\Exception $e) {
+            return response([
+                $e->getMessage()
             ], 500);
         }
     }

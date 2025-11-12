@@ -61,6 +61,18 @@ class PostController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        try{
+        $post = Post::findOrFail($id);
+        $post->delete();
+        
+         
+        return response(
+                'Post Eliminado'
+            , 200);
+        }catch (\Exception $e) {
+            return response([
+                $e->getMessage()
+            ], 500);
+        }
     }
 }
