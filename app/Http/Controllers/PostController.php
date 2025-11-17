@@ -27,9 +27,14 @@ class PostController extends Controller
                 'user_id' => $request->user()->id,
             ]);
 
-            $post = $request->validate([
+            $fields = $request->validate([
                 'content' => 'required|string',
                 'user_id' => 'required|integer',
+            ]);
+            
+            $post = Post::create([
+                'content' => $fields['content'],
+                'user_id' => $fields['user_id'],
             ]);
 
             return response()->json($post, 201);
