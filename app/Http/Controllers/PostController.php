@@ -12,7 +12,20 @@ class PostController extends Controller
      */
     public function index()
     {
-        //
+        try {
+            $posts = Post::with('user:id,name,email')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'posts' => $posts
+            ], 200);
+        } catch (\Exception $e) {
+            return response([
+                'message' => 'Error al obtener los posts',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
@@ -56,21 +69,47 @@ class PostController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Post $post)
     {
-        //
+        try {
+            if ($request->user()->id !== $post->user_id) {
+                return response([
+                    'message' => 'No tienes permiso para editar este post'
+                ], 403);
+            }
+
+            $fields = $request->validate([
+                'content' => 'required|string',
+            ]);
+
+            $post->update([
+                'content' => $fields['content'],
+            ]);
+
+            return response()->json($post, 200);
+        } catch (\Exception $e) {
+            return response([
+                $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
         try{
         $post = Post::findOrFail($id);
+
+        if ($request->user()->id !== $post->user_id) {
+            return response([
+                'message' => 'No tienes permiso para eliminar este post'
+            ], 403);
+        }
+
         $post->delete();
         
-         
         return response(
                 'Post Eliminado'
             , 200);
