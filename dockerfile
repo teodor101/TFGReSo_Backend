@@ -14,13 +14,14 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_pgsql bcmath
 
 # Instalar Composer copiándolo de la imagen oficial
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Copiamos primero composer.* para aprovechar cache de Docker
 COPY . .
 
 # Instalar dependencias de PHP (sin dev y optimizado para prod)
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
+
+# Copiar el resto del código del proyecto
 
 
 # Dar permisos a storage y bootstrap/cache
