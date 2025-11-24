@@ -17,13 +17,11 @@ RUN apt-get update && apt-get install -y \
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 # Copiamos primero composer.* para aprovechar cache de Docker
-COPY composer.json composer.lock* ./
+COPY . .
 
 # Instalar dependencias de PHP (sin dev y optimizado para prod)
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader
 
-# Copiar el resto del código del proyecto
-COPY . .
 
 # Dar permisos a storage y bootstrap/cache
 RUN chown -R www-data:www-data storage bootstrap/cache \
