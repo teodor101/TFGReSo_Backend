@@ -14,6 +14,7 @@ class PostController extends Controller
     {
         try {
             $posts = Post::with('user:id,name,email')
+                ->withCount('likes as likes_count')
                 ->orderBy('created_at', 'desc')
                 ->get();
 
@@ -23,6 +24,37 @@ class PostController extends Controller
         } catch (\Exception $e) {
             return response([
                 'message' => 'Error al obtener los posts',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function feed(Request $request)
+    {
+        try {
+            $userId = $request->user()->id;
+
+            $posts = Post::with('user:id,name,email')
+                ->withCount('likes as likes_count')
+                ->withCount([
+                    'likes as liked_by_me' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    }
+                ])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($post) {
+                    $post->liked = ($post->liked_by_me ?? 0) > 0;
+                    unset($post->liked_by_me);
+                    return $post;
+                });
+
+            return response()->json([
+                'posts' => $posts
+            ], 200);
+        } catch (\Exception $e) {
+            return response([
+                'message' => 'Error al obtener el feed',
                 'error' => $e->getMessage()
             ], 500);
         }

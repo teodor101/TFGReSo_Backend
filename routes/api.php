@@ -3,6 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\LikeController;
 use App\Http\Controllers\PostController;
 
 Route::get('/user', function (Request $request) {
@@ -20,7 +21,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::delete('/profile', [AuthController::class, 'deleteAccount']);
     Route::post('/createpost', [PostController::class, 'store']);
-    Route::put('/posts/{post}', [PostController::class, 'update']);
+    Route::get('/posts/feed', [PostController::class, 'feed']);
+    Route::post('/posts/{post}/like', [LikeController::class, 'togglePostLike'])->whereNumber('post');
+    Route::put('/posts/{post}', [PostController::class, 'update'])->whereNumber('post');
     Route::get('/getPosts', [AuthController::class, 'getCurrentUserWithPosts']);
     Route::delete('/deletePosts/{id}', [PostController::class, 'destroy']);
 });

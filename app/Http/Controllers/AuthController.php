@@ -131,8 +131,23 @@ class AuthController extends Controller
     public function getCurrentUserWithPosts(Request $request)
     {
         try {
+            $userId = $request->user()->id;
 
-            $userWithPosts = User::findOrFail($request->user()->id)->posts;
+            $userWithPosts = User::findOrFail($userId)
+                ->posts()
+                ->withCount('likes as likes_count')
+                ->withCount([
+                    'likes as liked_by_me' => function ($q) use ($userId) {
+                        $q->where('user_id', $userId);
+                    }
+                ])
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->map(function ($post) {
+                    $post->liked = ($post->liked_by_me ?? 0) > 0;
+                    unset($post->liked_by_me);
+                    return $post;
+                });
 
             return response([
                 'user' => $userWithPosts,
