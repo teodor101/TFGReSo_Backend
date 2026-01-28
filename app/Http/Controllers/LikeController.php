@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Comment;
 use App\Models\Like;
 use App\Models\Post;
 use Illuminate\Http\Request;
@@ -39,6 +40,42 @@ class LikeController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Error al actualizar el like',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function toggleCommentLike(Request $request, Comment $comment)
+    {
+        try {
+            $userId = $request->user()->id;
+
+            $existing = Like::where('comment_id', $comment->id)
+                ->where('user_id', $userId)
+                ->first();
+
+            if ($existing) {
+                $existing->delete();
+                $liked = false;
+            } else {
+                Like::create([
+                    'comment_id' => $comment->id,
+                    'user_id' => $userId,
+                    'post_id' => null,
+                ]);
+                $liked = true;
+            }
+
+            $likesCount = Like::where('comment_id', $comment->id)->count();
+
+            return response()->json([
+                'comment_id' => $comment->id,
+                'liked' => $liked,
+                'likes_count' => $likesCount,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error al actualizar el like del comentario',
                 'error' => $e->getMessage(),
             ], 500);
         }
