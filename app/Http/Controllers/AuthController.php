@@ -136,6 +136,7 @@ class AuthController extends Controller
             $userWithPosts = User::findOrFail($userId)
                 ->posts()
                 ->withCount('likes as likes_count')
+                ->withCount('comments as comments_count')
                 ->withCount([
                     'likes as liked_by_me' => function ($q) use ($userId) {
                         $q->where('user_id', $userId);

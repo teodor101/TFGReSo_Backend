@@ -27,6 +27,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/posts/{post}/like', [LikeController::class, 'togglePostLike'])->whereNumber('post');
     Route::post('/posts/{post}/comments', [CommentController::class, 'store'])->whereNumber('post');
     Route::post('/comments/{comment}/like', [LikeController::class, 'toggleCommentLike'])->whereNumber('comment');
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->whereNumber('comment');
     Route::put('/posts/{post}', [PostController::class, 'update'])->whereNumber('post');
     Route::get('/getPosts', [AuthController::class, 'getCurrentUserWithPosts']);
     Route::delete('/deletePosts/{id}', [PostController::class, 'destroy']);

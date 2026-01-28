@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
+use App\Models\Like;
 use App\Models\Post;
 use Illuminate\Http\Request;
 
@@ -71,6 +72,31 @@ class CommentController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Error al crear el comentario',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    public function destroy(Request $request, Comment $comment)
+    {
+        try {
+            if ($request->user()->id !== $comment->user_id) {
+                return response()->json([
+                    'message' => 'No tienes permiso para eliminar este comentario',
+                ], 403);
+            }
+
+            // Evitar likes huérfanos
+            Like::where('comment_id', $comment->id)->delete();
+
+            $comment->delete();
+
+            return response()->json([
+                'message' => 'Comentario eliminado',
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error al eliminar el comentario',
                 'error' => $e->getMessage(),
             ], 500);
         }
