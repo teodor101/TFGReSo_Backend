@@ -9,7 +9,18 @@ class Post extends Model
     protected $fillable = [
         'content',
         'user_id',
+        'image_path',
     ];
+
+    protected $appends = ['image_url'];
+
+    public function getImageUrlAttribute(): ?string
+    {
+        if (!$this->image_path) {
+            return null;
+        }
+        return asset('storage/' . $this->image_path);
+    }
 
     public function user()
     {

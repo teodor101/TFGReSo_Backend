@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class PostController extends Controller
 {
@@ -67,27 +68,39 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-
-
         try {
             $request->merge([
                 'user_id' => $request->user()->id,
             ]);
 
-            $fields = $request->validate([
+            $rules = [
                 'content' => 'required|string',
                 'user_id' => 'required|integer',
-            ]);
-            
+            ];
+
+            $request->validate($rules);
+
+            $imagePath = null;
+            if ($request->hasFile('image')) {
+                $request->validate([
+                    'image' => 'image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+                ]);
+                $file = $request->file('image');
+                $path = $file->store('posts', 'public');
+                $imagePath = $path;
+            }
+
             $post = Post::create([
-                'content' => $fields['content'],
-                'user_id' => $fields['user_id'],
+                'content' => $request->input('content'),
+                'user_id' => $request->user()->id,
+                'image_path' => $imagePath,
             ]);
 
             return response()->json($post, 201);
         } catch (\Exception $e) {
             return response([
-                $e->getMessage()
+                'message' => 'Error al crear el post',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -140,6 +153,10 @@ class PostController extends Controller
             return response([
                 'message' => 'No tienes permiso para eliminar este post'
             ], 403);
+        }
+
+        if ($post->image_path) {
+            Storage::disk('public')->delete($post->image_path);
         }
 
         $post->delete();
