@@ -17,6 +17,7 @@ class PostController extends Controller
             $posts = Post::with('user:id,name,email')
                 ->withCount('likes as likes_count')
                 ->withCount('comments as comments_count')
+                ->orderByDesc('likes_count')
                 ->orderBy('created_at', 'desc')
                 ->get();
 
@@ -44,6 +45,7 @@ class PostController extends Controller
                         $q->where('user_id', $userId);
                     }
                 ])
+                ->orderByDesc('likes_count')
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($post) {

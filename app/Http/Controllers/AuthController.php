@@ -142,6 +142,7 @@ class AuthController extends Controller
                         $q->where('user_id', $userId);
                     }
                 ])
+                ->orderByDesc('likes_count')
                 ->orderBy('created_at', 'desc')
                 ->get()
                 ->map(function ($post) {
