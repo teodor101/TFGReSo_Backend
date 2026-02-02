@@ -28,6 +28,8 @@ RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoload
 # Ahora copiar el resto del código
 COPY . .
 
+RUN php artisan storage:link || true
+
 # Ejecutar scripts post-install de Composer
 RUN composer dump-autoload --optimize
 
