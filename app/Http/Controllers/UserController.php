@@ -41,7 +41,7 @@ class UserController extends Controller
     /**
      * Obtener perfil público de un usuario
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         try {
             $user = User::findOrFail($id);
@@ -52,6 +52,11 @@ class UserController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
+            $isFollowing = false;
+            if ($request->user()) {
+                $isFollowing = $request->user()->following()->where('followed_id', $id)->exists();
+            }
+
             return response([
                 'user' => [
                     'id' => $user->id,
@@ -59,6 +64,7 @@ class UserController extends Controller
                     'email' => $user->email,
                     'followers_count' => $user->followers()->count(),
                     'following_count' => $user->following()->count(),
+                    'is_following' => $isFollowing,
                 ],
                 'posts' => $posts
             ], 200);
@@ -69,4 +75,46 @@ class UserController extends Controller
             ], 404);
         }
     }
+
+    /**
+     * Seguir o dejar de seguir a un usuario
+     */
+    public function toggleFollow(Request $request, $id)
+    {
+        try {
+            $userToFollow = User::findOrFail($id);
+            $currentUser = $request->user();
+
+            // No puedes seguirte a ti mismo
+            if ($currentUser->id === $userToFollow->id) {
+                return response([
+                    'message' => 'No puedes seguirte a ti mismo'
+                ], 400);
+            }
+
+            $isFollowing = $currentUser->following()->where('followed_id', $id)->exists();
+
+            if ($isFollowing) {
+                // Dejar de seguir
+                $currentUser->following()->detach($id);
+                $message = 'Has dejado de seguir a ' . $userToFollow->name;
+            } else {
+                // Seguir
+                $currentUser->following()->attach($id);
+                $message = 'Ahora sigues a ' . $userToFollow->name;
+            }
+
+            return response([
+                'message' => $message,
+                'is_following' => !$isFollowing,
+                'followers_count' => $userToFollow->followers()->count()
+            ], 200);
+        } catch (\Exception $e) {
+            return response([
+                'message' => 'Error al procesar la solicitud',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 }
+

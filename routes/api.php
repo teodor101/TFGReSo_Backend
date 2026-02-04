@@ -34,4 +34,5 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::put('/posts/{post}', [PostController::class, 'update'])->whereNumber('post');
     Route::get('/getPosts', [AuthController::class, 'getCurrentUserWithPosts']);
     Route::delete('/deletePosts/{id}', [PostController::class, 'destroy']);
+    Route::post('/users/{id}/follow', [UserController::class, 'toggleFollow'])->whereNumber('id');
 });
