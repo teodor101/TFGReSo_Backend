@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 
 class AuthController extends Controller
@@ -85,15 +86,18 @@ class AuthController extends Controller
     public function profile(Request $request)
     {
         try {
-
             $user = User::findOrFail($request->user()->id);
+
+            if ($user->image_path) {
+                $user->image_url = url('storage/' . $user->image_path);
+            }
 
             return response([
                 'user' => $user,
             ], 200);
         } catch (\Throwable $th) {
             return response([
-                "eeeerrr"
+                "message" => "Error al obtener perfil"
             ], 500);
         }
     }
@@ -111,19 +115,38 @@ class AuthController extends Controller
                     'email',
                     Rule::unique('users', 'email')->ignore($user->id),
                 ],
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048'
             ]);
 
-            $user->update([
+            $userData = [
                 'name' => $fields['name'],
                 'email' => $fields['email'],
-            ]);
+            ];
+
+            if ($request->hasFile('image')) {
+                // Eliminar imagen anterior si existe
+                if ($user->image_path && Storage::disk('public')->exists($user->image_path)) {
+                    Storage::disk('public')->delete($user->image_path);
+                }
+
+                $path = $request->file('image')->store('profiles', 'public');
+                $userData['image_path'] = $path;
+            }
+
+            $user->update($userData);
+
+            // Añadir URL completa de la imagen
+            if ($user->image_path) {
+                $user->image_url = url('storage/' . $user->image_path);
+            }
 
             return response([
                 'user' => $user,
             ], 200);
         } catch (\Exception $e) {
             return response([
-                $e->getMessage()
+                'message' => 'Error al actualizar perfil',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -151,6 +174,19 @@ class AuthController extends Controller
                     return $post;
                 });
 
+            if ($userWithPosts && $userWithPosts->isNotEmpty()) {
+                // Nota: $userWithPosts es una colección de posts, no el usuario con posts.
+                // El nombre de la variable es confuso en el código original, pero lo mantengo para no romper nada.
+                // Sin embargo, el endpoint se llama getCurrentUserWithPosts pero devuelve {user: [posts]} ??
+                // Aah, el original hacia User::findOrFail... ->posts()... ->get().
+                // Asi que devuelve una lista de Posts.
+
+                // Si queremos devolver info del usuario tambien, deberiamos cambiar la respuesta.
+                // Pero el frontend espera { user: [posts] }.
+            }
+            // Espera, el frontend usa response.data.user para setPosts.
+            // Asi que en realidad devuelve posts. 
+
             return response([
                 'user' => $userWithPosts,
             ], 200);
@@ -165,13 +201,13 @@ class AuthController extends Controller
     {
         try {
             $user = $request->user();
-            
+
             // Eliminar todos los tokens del usuario
             $user->tokens()->delete();
-            
+
             // Eliminar todos los posts del usuario
             $user->posts()->delete();
-            
+
             // Eliminar el usuario
             $user->delete();
 

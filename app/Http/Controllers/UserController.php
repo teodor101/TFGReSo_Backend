@@ -23,9 +23,15 @@ class UserController extends Controller
 
             $users = User::where('name', 'like', "%{$query}%")
                 ->orWhere('email', 'like', "%{$query}%")
-                ->select('id', 'name', 'email')
+                ->select('id', 'name', 'email', 'image_path')
                 ->limit(20)
-                ->get();
+                ->get()
+                ->map(function ($user) {
+                    if ($user->image_path) {
+                        $user->image_url = url('storage/' . $user->image_path);
+                    }
+                    return $user;
+                });
 
             return response([
                 'users' => $users
@@ -57,6 +63,11 @@ class UserController extends Controller
                 $isFollowing = $request->user()->following()->where('followed_id', $id)->exists();
             }
 
+            $imageUrl = null;
+            if ($user->image_path) {
+                $imageUrl = url('storage/' . $user->image_path);
+            }
+
             return response([
                 'user' => [
                     'id' => $user->id,
@@ -65,6 +76,7 @@ class UserController extends Controller
                     'followers_count' => $user->followers()->count(),
                     'following_count' => $user->following()->count(),
                     'is_following' => $isFollowing,
+                    'image_url' => $imageUrl,
                 ],
                 'posts' => $posts
             ], 200);
