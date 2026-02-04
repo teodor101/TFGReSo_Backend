@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LikeController;
 use App\Http\Controllers\PostController;
+use App\Http\Controllers\UserController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -15,6 +16,8 @@ Route::get('/user', function (Request $request) {
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::get('/posts', [PostController::class, 'index']);
+Route::get('/users/search', [UserController::class, 'search']);
+Route::get('/users/{id}', [UserController::class, 'show'])->whereNumber('id');
 Route::get('/posts/{post}/comments', [CommentController::class, 'index'])->whereNumber('post');
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
