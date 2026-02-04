@@ -14,12 +14,18 @@ class PostController extends Controller
     public function index()
     {
         try {
-            $posts = Post::with('user:id,name,email')
+            $posts = Post::with('user:id,name,email,image_path')
                 ->withCount('likes as likes_count')
                 ->withCount('comments as comments_count')
                 ->orderByDesc('likes_count')
                 ->orderBy('created_at', 'desc')
-                ->get();
+                ->get()
+                ->map(function ($post) {
+                    if ($post->user && $post->user->image_path) {
+                        $post->user->image_url = url('storage/' . $post->user->image_path);
+                    }
+                    return $post;
+                });
 
             return response()->json([
                 'posts' => $posts
@@ -37,7 +43,7 @@ class PostController extends Controller
         try {
             $userId = $request->user()->id;
 
-            $posts = Post::with('user:id,name,email')
+            $posts = Post::with('user:id,name,email,image_path')
                 ->withCount('likes as likes_count')
                 ->withCount('comments as comments_count')
                 ->withCount([
@@ -51,6 +57,11 @@ class PostController extends Controller
                 ->map(function ($post) {
                     $post->liked = ($post->liked_by_me ?? 0) > 0;
                     unset($post->liked_by_me);
+
+                    if ($post->user && $post->user->image_path) {
+                        $post->user->image_url = url('storage/' . $post->user->image_path);
+                    }
+
                     return $post;
                 });
 
@@ -148,25 +159,27 @@ class PostController extends Controller
      */
     public function destroy(Request $request, string $id)
     {
-        try{
-        $post = Post::findOrFail($id);
+        try {
+            $post = Post::findOrFail($id);
 
-        if ($request->user()->id !== $post->user_id) {
-            return response([
-                'message' => 'No tienes permiso para eliminar este post'
-            ], 403);
-        }
+            if ($request->user()->id !== $post->user_id) {
+                return response([
+                    'message' => 'No tienes permiso para eliminar este post'
+                ], 403);
+            }
 
-        if ($post->image_path) {
-            Storage::disk('public')->delete($post->image_path);
-        }
+            if ($post->image_path) {
+                Storage::disk('public')->delete($post->image_path);
+            }
 
-        $post->delete();
-        
-        return response(
+            $post->delete();
+
+            return response(
                 'Post Eliminado'
-            , 200);
-        }catch (\Exception $e) {
+                ,
+                200
+            );
+        } catch (\Exception $e) {
             return response([
                 $e->getMessage()
             ], 500);
