@@ -175,17 +175,10 @@ class AuthController extends Controller
                 });
 
             if ($userWithPosts && $userWithPosts->isNotEmpty()) {
-                // Nota: $userWithPosts es una colección de posts, no el usuario con posts.
-                // El nombre de la variable es confuso en el código original, pero lo mantengo para no romper nada.
-                // Sin embargo, el endpoint se llama getCurrentUserWithPosts pero devuelve {user: [posts]} ??
-                // Aah, el original hacia User::findOrFail... ->posts()... ->get().
-                // Asi que devuelve una lista de Posts.
+                // $userWithPosts es una colección de posts, no el usuario con posts.
 
-                // Si queremos devolver info del usuario tambien, deberiamos cambiar la respuesta.
-                // Pero el frontend espera { user: [posts] }.
             }
-            // Espera, el frontend usa response.data.user para setPosts.
-            // Asi que en realidad devuelve posts. 
+
 
             return response([
                 'user' => $userWithPosts,
